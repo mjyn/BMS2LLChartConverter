@@ -1,11 +1,11 @@
-
+﻿
 *---------------------- HEADER FIELD
 
 #PLAYER 3
 #GENRE ハイコア
 #TITLE 渚の小悪魔ラヴリィ～レイディオ [09 EASY]
 #ARTIST 夏色ビキニのPrim
-#BPM 190
+#BPM 190.42
 #PLAYLEVEL 6
 #RANK 3
 #STAGEFILE 

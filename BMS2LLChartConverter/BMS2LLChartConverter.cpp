@@ -4,16 +4,124 @@
 #include <math.h>
 #define TRUE 1
 #define FALSE 0
+#define BPMLINE 0
+#define DEFINEBPMLINE 1
+#define LNTYPELINE 2
+
 char CurrentLine[1024];
-int CurrentBPM;
+double CurrentBPM;
+int LNType;
+double BPMDefine[36][36];
 
 int IsBPMLine()
 {
-	if (strnicmp("#BPM", CurrentLine, 4) == 0)
+	if (strnicmp("#BPM ", CurrentLine, 5) == 0)
 	{
 		return 1;
 	}
+	else
+	{
+		return 0;
+	}
 }
+int IsLNTYPELine()
+{
+	if (strnicmp("#LNTYPE ", CurrentLine, 8) == 0)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+int IsDefineBPMLine()
+{
+	if ((strnicmp("#BPM", CurrentLine, 4) == 0) && CurrentLine[4] != ' ')
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+double ReadNumber(int StartDigit)
+{
+	int i, j, k, l, IsFloat;
+	double output = 0;
+	for (i = StartDigit; CurrentLine[i] == ' '; i++) {}
+	for (j = i; ((CurrentLine[i] >= '0') && (CurrentLine[i] <= '9')); i++) {}
+	if (CurrentLine[i] == '.')
+	{
+		IsFloat = 1;
+		k = i + 1;
+		for (l = k; ((CurrentLine[l] >= '0') && (CurrentLine[l] <= '9')); l++) {}
+		l--;
+	}
+	else
+	{
+		IsFloat = 0;
+	}
+	i--;
+	//此处j是第一个为数字的字符 执行完毕后i代表最后一个数字位 k代表第一个小数位 l代表最后一个小数位
+	for (int m = 0; i >= j; i--)
+	{
+		output = output + (CurrentLine[i] - '0')*pow(10, m);
+		m++;
+	}
+	if (IsFloat)
+	{
+		int a = 1;//小数点后位数
+		for (int m = -1; k <= l; k++)
+		{
+			output = output + (CurrentLine[k] - '0')*pow(10, m);
+			m--;
+			a = a * 10;
+		}
+		output = output*a;
+		output = (int)(output + 0.5);
+		output = output / a;
+	}
+	return output;
+}
+
+int ProcessCurrentLineNum(int LineType)
+{
+	switch (LineType)
+	{
+	case BPMLINE:
+		CurrentBPM = ReadNumber(5);
+		break;
+	case DEFINEBPMLINE:
+		int x, y;
+		if ((CurrentLine[4] >= '0') && (CurrentLine[4] <= '9'))
+		{
+			x = CurrentLine[4] - '0';
+		}
+		else
+		{
+			x = CurrentLine[4] - 'A' + 10;
+		}
+		if ((CurrentLine[5] >= '0') && (CurrentLine[5] <= '9'))
+		{
+			y = CurrentLine[5] - '0';
+		}
+		else
+		{
+			y = CurrentLine[5] - 'A' + 10;
+		}
+		BPMDefine[x][y] = ReadNumber(7);
+		break;
+	case LNTYPELINE:
+		LNType = ReadNumber(8);
+		break;
+	}
+	return 0;
+}
+
+
 
 //int IsSkipCurrentLine()
 
@@ -38,19 +146,22 @@ int main(int argc, char *argv[])
 		//主循环
 	{
 		fgets(CurrentLine, 1024, SourceFilePt);
-		if (IsBPMLine() == TRUE)
+		//读取一行
+
+		if (IsBPMLine())
 		{
-			int i, j;
-			for (i = 5; CurrentLine[i] == ' '; i++) {}
-			for (j = i; ((CurrentLine[i] >= '0') && (CurrentLine[i] <= '9')); i++) {}
-			i--;
-			//此处j是第一个为数字的字符 执行完毕后i代表最后一个数字位
-			for (int k = 0; i >= j; i--)
-			{
-				CurrentBPM = CurrentBPM + (CurrentLine[i] - '0') * pow(10, k);
-				k++;
-			}
+			ProcessCurrentLineNum(BPMLINE);
 		}
+		//若为#BPM行，获取BPM
+		if (IsDefineBPMLine())
+		{
+			ProcessCurrentLineNum(DEFINEBPMLINE);
+		}
+		if (IsLNTYPELine())
+		{
+			ProcessCurrentLineNum(LNTYPELINE);
+		}
+		//若为BPM定义行，读入定义数
+
 	}
 }
-
