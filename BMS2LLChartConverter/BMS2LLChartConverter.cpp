@@ -9,10 +9,17 @@
 #define LNTYPELINE 2
 
 char CurrentLine[1024];
-double CurrentBPM;
+double StartBPM;
 int LNType;
 double BPMDefine[36][36];
-
+struct MeasureStruct
+{
+	double BPM[10];
+	double BPMChangeTime[10];
+	double StartTime;
+	int BeatCount;
+	int BPMChangeInMeasure;
+}Measure[1000];
 int IsBPMLine()
 {
 	if (strnicmp("#BPM ", CurrentLine, 5) == 0)
@@ -38,6 +45,17 @@ int IsLNTYPELine()
 int IsDefineBPMLine()
 {
 	if ((strnicmp("#BPM", CurrentLine, 4) == 0) && CurrentLine[4] != ' ')
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+int IsChangeBPMLine()
+{
+	if ((CurrentLine[0] == '#') && (CurrentLine[4] == '0') && (CurrentLine[5] == '3'))
 	{
 		return 1;
 	}
@@ -92,7 +110,7 @@ int ProcessCurrentLineNum(int LineType)
 	switch (LineType)
 	{
 	case BPMLINE:
-		CurrentBPM = ReadNumber(5);
+		StartBPM = ReadNumber(5);
 		break;
 	case DEFINEBPMLINE:
 		int x, y;
@@ -143,7 +161,8 @@ int main(int argc, char *argv[])
 	}
 
 	while (!feof(SourceFilePt))
-		//主循环
+		//第一次循环，读取起始BPM、BPM定义、所有的BPM通道以及节拍通道的内容
+		//循环后计算每个小节的起始时间和拍数，并标记是否存在小节中途变速。
 	{
 		fgets(CurrentLine, 1024, SourceFilePt);
 		//读取一行
@@ -162,6 +181,6 @@ int main(int argc, char *argv[])
 			ProcessCurrentLineNum(LNTYPELINE);
 		}
 		//若为BPM定义行，读入定义数
-
+		if (IsChangeBPMLine())
 	}
 }
