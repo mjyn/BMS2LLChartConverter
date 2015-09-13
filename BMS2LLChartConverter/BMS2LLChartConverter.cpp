@@ -7,6 +7,7 @@
 #define BPMLINE 0
 #define DEFINEBPMLINE 1
 #define LNTYPELINE 2
+#define CHANGEBPMLINE 3
 
 char CurrentLine[1024];
 double StartBPM;
@@ -15,10 +16,13 @@ double BPMDefine[36][36];
 struct MeasureStruct
 {
 	double BPM[10];
-	double BPMChangeTime[10];
+	double BPMChangeTime[9];
 	double StartTime;
 	int BeatCount;
-	int BPMChangeInMeasure;
+	int BPMChangeInMeasure = 0;
+	//在小节当中变更为1，如果在小节初始变更则为0
+	int BeatCountChangeInMeasure = 0;
+	//本程序目标暂时不支持小结当中的 每小节拍数变更
 }Measure[1000];
 int IsBPMLine()
 {
@@ -64,6 +68,39 @@ int IsChangeBPMLine()
 		return 0;
 	}
 }
+int IsMainDataLine()
+{
+	if ((CurrentLine[0] != '#') || (CurrentLine[6] != ':'))
+	{
+		return 0;
+	}
+	for (int i = 1; i < 6; i++)
+	{
+		if ((CurrentLine[i] <= '0') || (CurrentLine[i] >= '9'))
+		{
+			if ((CurrentLine[i] <= 'A') || (CurrentLine[i] >= 'Z'))
+			{
+				return 0;
+			}
+		}
+	}
+	return 1;
+}
+
+int MainDataLine_GetLength()
+{
+	int Length = 0, i = 7;
+	while (1)
+	{
+		if (CurrentLine[i] == 10)
+		{
+			break;
+		}
+		Length++;
+		i = i + 2;
+	}
+	return Length;
+}
 
 double ReadNumber(int StartDigit)
 {
@@ -104,6 +141,12 @@ double ReadNumber(int StartDigit)
 	}
 	return output;
 }
+int ReadMeasureCount()
+{
+	int Count = 0;
+	Count = Count + (CurrentLine[1] - '0') * 100 + (CurrentLine[2] - '0') * 10 + (CurrentLine[3] - '0');
+	return Count;
+}
 
 int ProcessCurrentLineNum(int LineType)
 {
@@ -134,6 +177,29 @@ int ProcessCurrentLineNum(int LineType)
 		break;
 	case LNTYPELINE:
 		LNType = ReadNumber(8);
+		break;
+	case CHANGEBPMLINE:
+		int Length = MainDataLine_GetLength();
+		for (int i = 1; i <= Length; i++)
+		{
+			if ((CurrentLine[7 + 2 * (i - 1)] == '0') && (CurrentLine[7 + 2 * (i - 1) + 1] == '0'))
+			{
+				i++;
+			}
+			else
+			{
+				int CurrentMeasure = ReadMeasureCount();
+				if (i == 1)
+				{
+					Measure[CurrentMeasure].BPMChangeInMeasure = 0;
+				}
+				else
+				{
+					Measure[CurrentMeasure].BPMChangeInMeasure = 1;
+				}
+				//此处未完成
+			}
+		}
 		break;
 	}
 	return 0;
@@ -182,5 +248,8 @@ int main(int argc, char *argv[])
 		}
 		//若为BPM定义行，读入定义数
 		if (IsChangeBPMLine())
+		{
+			ProcessCurrentLineNum(CHANGEBPMLINE);
+		}
 	}
 }
