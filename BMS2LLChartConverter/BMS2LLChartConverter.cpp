@@ -15,9 +15,11 @@ int LNType;
 double BPMDefine[36][36];
 struct MeasureStruct
 {
-	double BPM[10];
-	double BPMChangeTime[9];
+	double ChangedBPM[9];
+	double BPMChangeTime[9];//绝对时间
+	double BPMChangePlace[9];//小节位置（%
 	double StartTime;
+	double StartBPM;
 	int BeatCount;
 	int BPMChangeInMeasure = 0;
 	//在小节当中变更为1，如果在小节初始变更则为0
@@ -180,24 +182,75 @@ int ProcessCurrentLineNum(int LineType)
 		break;
 	case CHANGEBPMLINE:
 		int Length = MainDataLine_GetLength();
-		for (int i = 1; i <= Length; i++)
+		int CurrentMeasure;
+		int digit1, digit2;
+		int ChangeTimesCount = 0;
+		for (int i = 0; i <= Length; i++)
 		{
-			if ((CurrentLine[7 + 2 * (i - 1)] == '0') && (CurrentLine[7 + 2 * (i - 1) + 1] == '0'))
+			if ((CurrentLine[7 + 2 * i] == '0') && (CurrentLine[7 + 2 * i + 1] == '0'))
 			{
 				i++;
 			}
 			else
 			{
-				int CurrentMeasure = ReadMeasureCount();
-				if (i == 1)
+				CurrentMeasure = ReadMeasureCount();
+				if (i != 0)
 				{
-					Measure[CurrentMeasure].BPMChangeInMeasure = 0;
+					Measure[CurrentMeasure].BPMChangeInMeasure = 1;
+					
+				}
+				
+				digit1 = CurrentLine[7 + 2 * i];
+				digit2 = CurrentLine[7 + 2 * i + 1];
+
+				int x, y;
+				if ((digit1 >= '0') && (digit1 <= '9'))
+				{
+					x = digit1 - '0';
 				}
 				else
 				{
-					Measure[CurrentMeasure].BPMChangeInMeasure = 1;
+					x = digit1 - 'A' + 10;
 				}
-				//此处未完成
+				if ((digit2 >= '0') && (digit2 <= '9'))
+				{
+					y = digit2 - '0';
+				}
+				else
+				{
+					y = digit2 - 'A' + 10;
+				}
+
+				if (BPMDefine[x][y] == 0)
+				//BPM定义区无定义，为十六进制数BPM
+				{
+					if (Measure[CurrentMeasure].BPMChangeInMeasure == 1)
+					{
+						Measure[CurrentMeasure].BPMChangePlace[ChangeTimesCount] = i / Length;
+						Measure[CurrentMeasure].ChangedBPM[ChangeTimesCount] = x * 16 + y;
+					}
+					else
+					{
+						Measure[CurrentMeasure].StartBPM = x * 16 + y;
+					}
+				}
+				else
+				//BPM定义区有定义，使用定义区的BPM
+				{
+					if (Measure[CurrentMeasure].BPMChangeInMeasure == 1)
+					{
+						Measure[CurrentMeasure].BPMChangePlace[ChangeTimesCount] = i / Length;
+						Measure[CurrentMeasure].ChangedBPM[ChangeTimesCount] = BPMDefine[x][y];
+					}
+					else
+					{
+						Measure[CurrentMeasure].StartBPM = BPMDefine[x][y];
+					}
+				}
+				if (Measure[CurrentMeasure].BPMChangeInMeasure == 1)
+				{
+					ChangeTimesCount++;
+				}
 			}
 		}
 		break;
@@ -226,6 +279,14 @@ int main(int argc, char *argv[])
 		return(0);
 	}
 
+	for (int i = 0; i < 36; i++)
+	{
+		for (int j = 0; j < 36; j++)
+		{
+			BPMDefine[i][j] = NULL;
+		}
+	}//初始化BPM定义区
+
 	while (!feof(SourceFilePt))
 		//第一次循环，读取起始BPM、BPM定义、所有的BPM通道以及节拍通道的内容
 		//循环后计算每个小节的起始时间和拍数，并标记是否存在小节中途变速。
@@ -251,5 +312,6 @@ int main(int argc, char *argv[])
 		{
 			ProcessCurrentLineNum(CHANGEBPMLINE);
 		}
+		//此处认为所有的BPM定义都按标准格式在MAIN DATA FIELD之前完成。
 	}
 }
