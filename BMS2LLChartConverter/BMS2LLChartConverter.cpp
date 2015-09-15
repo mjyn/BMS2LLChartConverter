@@ -26,6 +26,7 @@ struct MeasureStruct
 	int BeatCountChangeInMeasure = 0;
 	//本程序目标暂时不支持小结当中的 每小节拍数变更
 }Measure[1000];
+
 int IsBPMLine()
 {
 	if (strnicmp("#BPM ", CurrentLine, 5) == 0)
@@ -61,7 +62,7 @@ int IsDefineBPMLine()
 }
 int IsChangeBPMLine()
 {
-	if ((CurrentLine[0] == '#') && (CurrentLine[4] == '0') && (CurrentLine[5] == '3'))
+	if ((CurrentLine[0] == '#') && (CurrentLine[4] == '0') && (CurrentLine[5] == '3') && (CurrentLine[1] >= '0') && (CurrentLine[1] <= '9'))
 	{
 		return 1;
 	}
@@ -185,7 +186,7 @@ int ProcessCurrentLineNum(int LineType)
 		int CurrentMeasure;
 		int digit1, digit2;
 		int ChangeTimesCount = 0;
-		for (int i = 0; i <= Length; i++)
+		for (int i = 0; i < Length;)
 		{
 			if ((CurrentLine[7 + 2 * i] == '0') && (CurrentLine[7 + 2 * i + 1] == '0'))
 			{
@@ -226,7 +227,7 @@ int ProcessCurrentLineNum(int LineType)
 				{
 					if (Measure[CurrentMeasure].BPMChangeInMeasure == 1)
 					{
-						Measure[CurrentMeasure].BPMChangePlace[ChangeTimesCount] = i / Length;
+						Measure[CurrentMeasure].BPMChangePlace[ChangeTimesCount] = (double)i / (double)Length;
 						Measure[CurrentMeasure].ChangedBPM[ChangeTimesCount] = x * 16 + y;
 					}
 					else
@@ -251,16 +252,13 @@ int ProcessCurrentLineNum(int LineType)
 				{
 					ChangeTimesCount++;
 				}
+				i++;
 			}
 		}
 		break;
 	}
 	return 0;
 }
-
-
-
-//int IsSkipCurrentLine()
 
 int main(int argc, char *argv[])
 {
@@ -311,6 +309,7 @@ int main(int argc, char *argv[])
 		if (IsChangeBPMLine())
 		{
 			ProcessCurrentLineNum(CHANGEBPMLINE);
+			int oiahoifha=0;
 		}
 		//此处认为所有的BPM定义都按标准格式在MAIN DATA FIELD之前完成。
 	}
