@@ -8,6 +8,7 @@
 #define DEFINEBPMLINE 1
 #define LNTYPELINE 2
 #define CHANGEBPMLINE 3
+#define CHANGEBEATCOUNTLINE 4
 
 char CurrentLine[1024];
 double StartBPM;
@@ -20,7 +21,7 @@ struct MeasureStruct
 	double BPMChangePlace[9];//小节位置（%
 	double StartTime;
 	double StartBPM;
-	int BeatCount;
+	int BeatCount = 0;
 	int BPMChangeInMeasure = 0;
 	//在小节当中变更为1，如果在小节初始变更则为0
 	int BeatCountChangeInMeasure = 0;
@@ -63,6 +64,17 @@ int IsDefineBPMLine()
 int IsChangeBPMLine()
 {
 	if ((CurrentLine[0] == '#') && (CurrentLine[4] == '0') && ((CurrentLine[5] == '3') || (CurrentLine[5] == '8')) && (CurrentLine[1] >= '0') && (CurrentLine[1] <= '9'))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+int IsChangeBeatCountLine()
+{
+	if ((CurrentLine[0] == '#') && (CurrentLine[4] == '0') && (CurrentLine[5] == '2') && (CurrentLine[1] >= '0') && (CurrentLine[1] <= '9'))
 	{
 		return 1;
 	}
@@ -256,6 +268,12 @@ int ProcessCurrentLineNum(int LineType)
 			}
 		}
 		break;
+	case CHANGEBEATCOUNTLINE:
+		int CurrentMeasure;
+		CurrentMeasure = ReadMeasureCount();
+		Measure[CurrentMeasure].BeatCountChangeInMeasure = 1;
+		Measure[CurrentMeasure].BeatCount = 4 * ReadNumber(7);
+		break;
 	}
 	return 0;
 }
@@ -312,5 +330,9 @@ int main(int argc, char *argv[])
 			int oiahoifha=0;
 		}
 		//此处认为所有的BPM定义都按标准格式在MAIN DATA FIELD之前完成。
+		if (IsChangeBeatCountLine())
+		{
+			ProcessCurrentLineNum(CHANGEBEATCOUNTLINE);
+		}
 	}
 }
