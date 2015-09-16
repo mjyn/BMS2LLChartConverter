@@ -62,7 +62,7 @@ int IsDefineBPMLine()
 }
 int IsChangeBPMLine()
 {
-	if ((CurrentLine[0] == '#') && (CurrentLine[4] == '0') && (CurrentLine[5] == '3') && (CurrentLine[1] >= '0') && (CurrentLine[1] <= '9'))
+	if ((CurrentLine[0] == '#') && (CurrentLine[4] == '0') && ((CurrentLine[5] == '3') || (CurrentLine[5] == '8')) && (CurrentLine[1] >= '0') && (CurrentLine[1] <= '9'))
 	{
 		return 1;
 	}
@@ -222,8 +222,8 @@ int ProcessCurrentLineNum(int LineType)
 					y = digit2 - 'A' + 10;
 				}
 
-				if (BPMDefine[x][y] == 0)
-				//BPM定义区无定义，为十六进制数BPM
+				if (CurrentLine[5] == '3')
+				//BPM通道为3，十六进制BPM
 				{
 					if (Measure[CurrentMeasure].BPMChangeInMeasure == 1)
 					{
@@ -236,7 +236,7 @@ int ProcessCurrentLineNum(int LineType)
 					}
 				}
 				else
-				//BPM定义区有定义，使用定义区的BPM
+				//BPM通道为8，定义BPM
 				{
 					if (Measure[CurrentMeasure].BPMChangeInMeasure == 1)
 					{
