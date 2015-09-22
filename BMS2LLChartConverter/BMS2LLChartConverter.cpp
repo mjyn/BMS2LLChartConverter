@@ -11,7 +11,6 @@
 #define CHANGEBEATCOUNTLINE 4
 
 char CurrentLine[1024];
-double StartBPM;
 int LNType;
 double BPMDefine[36][36];
 struct MeasureStruct
@@ -27,6 +26,7 @@ struct MeasureStruct
 	int BeatCountChangeInMeasure = 0;
 	//本程序目标暂时不支持小结当中的 每小节拍数变更
 }Measure[1000];
+int MaxMeasure;
 
 int IsBPMLine()
 {
@@ -156,10 +156,14 @@ double ReadNumber(int StartDigit)
 	}
 	return output;
 }
-int ReadMeasureCount()
+int ReadMeasureCount()//这里也用于确认maxmeasure
 {
 	int Count = 0;
 	Count = Count + (CurrentLine[1] - '0') * 100 + (CurrentLine[2] - '0') * 10 + (CurrentLine[3] - '0');
+	if (Count > MaxMeasure)
+	{
+		MaxMeasure = Count;
+	}
 	return Count;
 }
 
@@ -168,7 +172,7 @@ int ProcessCurrentLineNum(int LineType)
 	switch (LineType)
 	{
 	case BPMLINE:
-		StartBPM = ReadNumber(5);
+		Measure[0].StartBPM = ReadNumber(5);
 		break;
 	case DEFINEBPMLINE:
 		int x, y;
@@ -278,6 +282,11 @@ int ProcessCurrentLineNum(int LineType)
 	return 0;
 }
 
+int InitializeMeasures()
+{
+
+}
+
 int main(int argc, char *argv[])
 {
 	if (argc != 2)
@@ -327,7 +336,6 @@ int main(int argc, char *argv[])
 		if (IsChangeBPMLine())
 		{
 			ProcessCurrentLineNum(CHANGEBPMLINE);
-			int oiahoifha=0;
 		}
 		//此处认为所有的BPM定义都按标准格式在MAIN DATA FIELD之前完成。
 		if (IsChangeBeatCountLine())
@@ -335,4 +343,8 @@ int main(int argc, char *argv[])
 			ProcessCurrentLineNum(CHANGEBEATCOUNTLINE);
 		}
 	}
+	fclose(SourceFilePt);
+
+	InitializeMeasures();
+	
 }
