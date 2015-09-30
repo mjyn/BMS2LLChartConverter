@@ -214,9 +214,9 @@ int ProcessCurrentLineNum(int LineType)
 				if (i != 0)
 				{
 					Measure[CurrentMeasure].BPMChangeInMeasure = 1;
-					
+
 				}
-				
+
 				digit1 = CurrentLine[7 + 2 * i];
 				digit2 = CurrentLine[7 + 2 * i + 1];
 
@@ -239,7 +239,7 @@ int ProcessCurrentLineNum(int LineType)
 				}
 
 				if (CurrentLine[5] == '3')
-				//BPM通道为3，十六进制BPM
+					//BPM通道为3，十六进制BPM
 				{
 					if (Measure[CurrentMeasure].BPMChangeInMeasure == 1)
 					{
@@ -252,7 +252,7 @@ int ProcessCurrentLineNum(int LineType)
 					}
 				}
 				else
-				//BPM通道为8，定义BPM
+					//BPM通道为8，定义BPM
 				{
 					if (Measure[CurrentMeasure].BPMChangeInMeasure == 1)
 					{
@@ -271,20 +271,18 @@ int ProcessCurrentLineNum(int LineType)
 				i++;
 			}
 		}
-		break;
+		break;/*
 	case CHANGEBEATCOUNTLINE:
-		int CurrentMeasure;
-		CurrentMeasure = ReadMeasureCount();
-		Measure[CurrentMeasure].BeatCountChangeInMeasure = 1;
-		Measure[CurrentMeasure].BeatCount = 4 * ReadNumber(7);
-		break;
+	不知道为啥写在这里就会爆炸
+
+		break;*/
 	}
 	return 0;
 }
 
-int InitializeMeasures()
+void InitializeMeasures()
 {
-
+	
 }
 
 int main(int argc, char *argv[])
@@ -340,11 +338,14 @@ int main(int argc, char *argv[])
 		//此处认为所有的BPM定义都按标准格式在MAIN DATA FIELD之前完成。
 		if (IsChangeBeatCountLine())
 		{
-			ProcessCurrentLineNum(CHANGEBEATCOUNTLINE);
+			int CurrentMeasure;
+			CurrentMeasure = ReadMeasureCount();
+			Measure[CurrentMeasure].BeatCountChangeInMeasure = 1;
+			Measure[CurrentMeasure].BeatCount = 4 * ReadNumber(7);
 		}
 	}
 	fclose(SourceFilePt);
 
 	InitializeMeasures();
-	
+
 }
