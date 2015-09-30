@@ -19,14 +19,15 @@ struct MeasureStruct
 	double BPMChangeTime[9];//绝对时间
 	double BPMChangePlace[9];//小节位置（%
 	double StartTime;
-	double StartBPM;
+	double StartBPM = 0;
 	int BeatCount = 0;
 	int BPMChangeInMeasure = 0;
 	//在小节当中变更为1，如果在小节初始变更则为0
+
 	int BeatCountChangeInMeasure = 0;
 	//本程序目标暂时不支持小结当中的 每小节拍数变更
-}Measure[1000];
-int MaxMeasure;
+}Measure[1001];
+int UniversalOffset;
 
 int IsBPMLine()
 {
@@ -156,16 +157,15 @@ double ReadNumber(int StartDigit)
 	}
 	return output;
 }
-int ReadMeasureCount()//这里也用于确认maxmeasure
+int ReadMeasureCount()//不再考虑maxmeasure，直接使用1000
 {
 	int Count = 0;
 	Count = Count + (CurrentLine[1] - '0') * 100 + (CurrentLine[2] - '0') * 10 + (CurrentLine[3] - '0');
-	if (Count > MaxMeasure)
-	{
-		MaxMeasure = Count;
-	}
+
 	return Count;
 }
+
+
 
 int ProcessCurrentLineNum(int LineType)
 {
@@ -282,7 +282,23 @@ int ProcessCurrentLineNum(int LineType)
 
 void InitializeMeasures()
 {
-	
+	Measure[0].StartTime = UniversalOffset / 1000.0;
+	Measure[0].BeatCount = 4;
+	for (int i = 0; i < 1001; i++)
+	{
+		if (Measure[i].BeatCount == 0)
+		{
+			Measure[i].BeatCount = Measure[i - 1].BeatCount;
+		}
+		if (Measure[i].BPMChangeInMeasure == 0)
+		{
+			if (Measure[i].StartBPM == 0)
+			{
+				Measure[i].StartBPM = Measure[i - 1].StartBPM;
+			}
+			Measure[i + 1].StartTime = Measure[i].StartTime + Measure[i].BeatCount*(60.0 / Measure[i].StartBPM);
+		}
+	}
 }
 
 int main(int argc, char *argv[])
@@ -345,7 +361,14 @@ int main(int argc, char *argv[])
 		}
 	}
 	fclose(SourceFilePt);
-
+	printf("请输入全局 Offset ，整数，单位为毫秒。\n");
+	scanf("%d", &UniversalOffset);
 	InitializeMeasures();
 
+
+
+
+
+
+	return 0;
 }
