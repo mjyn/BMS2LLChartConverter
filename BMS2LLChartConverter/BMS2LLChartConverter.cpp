@@ -10,8 +10,13 @@
 #define CHANGEBPMLINE 3
 #define CHANGEBEATCOUNTLINE 4
 
+char keychar[9][2];
+int key[9] = { 11, 12, 13, 14, 15, 22, 23, 24, 25 };
+int notes_attribute = 1;
+FILE *SourceFilePt;
+FILE *OutputFilePt;
 char CurrentLine[1024];
-int LNType;
+int LNType = 1;
 double BPMDefine[36][36];
 struct MeasureStruct
 {
@@ -92,7 +97,7 @@ int IsMainDataLine()
 	}
 	for (int i = 1; i < 6; i++)
 	{
-		if ((CurrentLine[i] <= '0') || (CurrentLine[i] >= '9'))
+		if ((CurrentLine[i] < '0') || (CurrentLine[i] > '9'))
 		{
 			if ((CurrentLine[i] <= 'A') || (CurrentLine[i] >= 'Z'))
 			{
@@ -108,7 +113,7 @@ int MainDataLine_GetLength()
 	int Length = 0, i = 7;
 	while (1)
 	{
-		if (CurrentLine[i] == 10)
+		if (CurrentLine[i] == 10)//10即是"\n"
 		{
 			break;
 		}
@@ -301,6 +306,66 @@ void InitializeMeasures()
 	}
 }
 
+void WriteFile(char sourcefilename[])
+{
+	for (int i = 0; i < 9; i++)
+	{
+		keychar[i][0] = key[i] / 10;
+		keychar[i][1] = key[i] - 10 * keychar[i][0];
+		keychar[i][0] = keychar[i][0] + '0';
+		keychar[i][1] = keychar[i][1] + '0';
+	}
+
+	SourceFilePt = fopen(sourcefilename, "r");
+	OutputFilePt = fopen("output.txt", "w");
+	fprintf(OutputFilePt, "[");
+	
+
+	while (!feof(SourceFilePt))
+	{
+		fgets(CurrentLine, 1024, SourceFilePt);
+		if (IsMainDataLine())
+		{
+			if (LNType == 1)
+			{
+				for (int i = 0; i < 9; i++)
+				{
+					if ((CurrentLine[4] == keychar[i][0]) && (CurrentLine[5] == keychar[i][1]))
+					{
+						int Length = MainDataLine_GetLength();
+						int CurrentMeasure;
+						double time, placeinmeasure;
+						CurrentMeasure = ReadMeasureCount();
+						for (int j = 0; j < Length; j++)
+						{
+							if (!((CurrentLine[7 + 2 * j] == '0') && (CurrentLine[7 + 2 * j + 1] == '0')))
+							{
+								placeinmeasure = (double)j / (double)Length;
+								time = Measure[CurrentMeasure].StartTime + placeinmeasure*Measure[CurrentMeasure].BeatCount*(60.0 / Measure[CurrentMeasure].StartBPM);
+								fprintf(OutputFilePt, "{\n\"timing_sec\":");
+								fprintf(OutputFilePt, "%.3lf", time);
+								fprintf(OutputFilePt, ",\n\"notes_attribute\":");
+								fprintf(OutputFilePt, "%d", notes_attribute);
+								fprintf(OutputFilePt, ",\n\"notes_level\":1,\n\"effect\":1,\n\"effect_value\":");
+								fprintf(OutputFilePt, "1");
+								fprintf(OutputFilePt, ",\n\"position\":");
+								int outputposition = 9 - i;
+								fprintf(OutputFilePt, "%d", outputposition);
+								fprintf(OutputFilePt, "\n},\n");
+								fflush(OutputFilePt);
+								//但凡不是00，都暂定为同一种note。
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	fprintf(OutputFilePt, "]");
+	fclose(SourceFilePt);
+	fclose(OutputFilePt);
+}
+
 int main(int argc, char *argv[])
 {
 	if (argc != 2)
@@ -309,7 +374,7 @@ int main(int argc, char *argv[])
 		system("pause");
 		return(0);
 	}
-	FILE *SourceFilePt;
+
 	SourceFilePt = fopen(argv[1], "r");
 	if (SourceFilePt == NULL)
 	{
@@ -342,11 +407,11 @@ int main(int argc, char *argv[])
 		{
 			ProcessCurrentLineNum(DEFINEBPMLINE);
 		}
+		//若为BPM定义行，读入定义数
 		if (IsLNTYPELine())
 		{
 			ProcessCurrentLineNum(LNTYPELINE);
 		}
-		//若为BPM定义行，读入定义数
 		if (IsChangeBPMLine())
 		{
 			ProcessCurrentLineNum(CHANGEBPMLINE);
@@ -365,10 +430,10 @@ int main(int argc, char *argv[])
 	scanf("%d", &UniversalOffset);
 	InitializeMeasures();
 
+	
+	printf("采用PMS通道标准。");
 
-
-
-
+	WriteFile(argv[1]);
 
 	return 0;
 }
