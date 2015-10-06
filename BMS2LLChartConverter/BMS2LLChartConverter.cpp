@@ -342,7 +342,7 @@ void WriteFile(char sourcefilename[])
 							{
 								placeinmeasure = (double)j / (double)Length;
 								time = Measure[CurrentMeasure].StartTime + placeinmeasure*Measure[CurrentMeasure].BeatCount*(60.0 / Measure[CurrentMeasure].StartBPM);
-								fprintf(OutputFilePt, "{\n\"timing_sec\":");
+								fprintf(OutputFilePt, "\n{\n\"timing_sec\":");
 								fprintf(OutputFilePt, "%.3lf", time);
 								fprintf(OutputFilePt, ",\n\"notes_attribute\":");
 								fprintf(OutputFilePt, "%d", notes_attribute);
@@ -351,8 +351,7 @@ void WriteFile(char sourcefilename[])
 								fprintf(OutputFilePt, ",\n\"position\":");
 								int outputposition = 9 - i;
 								fprintf(OutputFilePt, "%d", outputposition);
-								fprintf(OutputFilePt, "\n},\n");
-								fflush(OutputFilePt);
+								fprintf(OutputFilePt, "\n},");
 								//但凡不是00，都暂定为同一种note。
 							}
 						}
@@ -361,7 +360,6 @@ void WriteFile(char sourcefilename[])
 			}
 		}
 	}
-	fprintf(OutputFilePt, "]");
 	fclose(SourceFilePt);
 	fclose(OutputFilePt);
 }
