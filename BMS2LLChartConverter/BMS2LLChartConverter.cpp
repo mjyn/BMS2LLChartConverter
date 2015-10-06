@@ -432,6 +432,6 @@ int main(int argc, char *argv[])
 	printf("采用PMS通道标准。");
 
 	WriteFile(argv[1]);
-
+	fprintf(OutputFilePt, "]");
 	return 0;
 }
