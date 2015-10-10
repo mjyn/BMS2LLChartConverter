@@ -277,10 +277,9 @@ int ProcessCurrentLineNum(int LineType)
 			}
 		}
 		break;/*
-	case CHANGEBEATCOUNTLINE:
-	不知道为啥写在这里就会爆炸
-
-		break;*/
+			  case CHANGEBEATCOUNTLINE:
+			  不知道为啥写在这里就会爆炸
+			  break;*/
 	}
 	return 0;
 }
@@ -303,6 +302,7 @@ void InitializeMeasures()
 			}
 			Measure[i + 1].StartTime = Measure[i].StartTime + Measure[i].BeatCount*(60.0 / Measure[i].StartBPM);
 		}
+		
 	}
 }
 
@@ -319,47 +319,50 @@ void WriteFile(char sourcefilename[])
 	SourceFilePt = fopen(sourcefilename, "r");
 	OutputFilePt = fopen("output.txt", "w");
 	fprintf(OutputFilePt, "[");
-	
 
-	while (!feof(SourceFilePt))
-	{
-		fgets(CurrentLine, 1024, SourceFilePt);
-		if (IsMainDataLine())
+	if (LNType == 1)//LNTYPE=1，长音位于单独的长音通道。
 		{
-			if (LNType == 1)
+			int LNflag[9];//当前lane是否有长音头
+			double LNStartTime[9], LNEndTime[9];
+			while (!feof(SourceFilePt))
 			{
-				for (int i = 0; i < 9; i++)
+				fgets(CurrentLine, 1024, SourceFilePt);
+				if (IsMainDataLine())
 				{
-					if ((CurrentLine[4] == keychar[i][0]) && (CurrentLine[5] == keychar[i][1]))
+					for (int i = 0; i < 9; i++)
 					{
-						int Length = MainDataLine_GetLength();
-						int CurrentMeasure;
-						double time, placeinmeasure;
-						CurrentMeasure = ReadMeasureCount();
-						for (int j = 0; j < Length; j++)
+						if ((CurrentLine[4] == keychar[i][0]) && (CurrentLine[5] == keychar[i][1]))
 						{
-							if (!((CurrentLine[7 + 2 * j] == '0') && (CurrentLine[7 + 2 * j + 1] == '0')))
+							int Length = MainDataLine_GetLength();
+							int CurrentMeasure;
+							double time, placeinmeasure;
+							CurrentMeasure = ReadMeasureCount();
+							for (int j = 0; j < Length; j++)
 							{
-								placeinmeasure = (double)j / (double)Length;
-								time = Measure[CurrentMeasure].StartTime + placeinmeasure*Measure[CurrentMeasure].BeatCount*(60.0 / Measure[CurrentMeasure].StartBPM);
-								fprintf(OutputFilePt, "\n{\n\"timing_sec\":");
-								fprintf(OutputFilePt, "%.3lf", time);
-								fprintf(OutputFilePt, ",\n\"notes_attribute\":");
-								fprintf(OutputFilePt, "%d", notes_attribute);
-								fprintf(OutputFilePt, ",\n\"notes_level\":1,\n\"effect\":1,\n\"effect_value\":");
-								fprintf(OutputFilePt, "1");
-								fprintf(OutputFilePt, ",\n\"position\":");
-								int outputposition = 9 - i;
-								fprintf(OutputFilePt, "%d", outputposition);
-								fprintf(OutputFilePt, "\n},");
-								//但凡不是00，都暂定为同一种note。
+								if (!((CurrentLine[7 + 2 * j] == '0') && (CurrentLine[7 + 2 * j + 1] == '0')))
+								{
+									placeinmeasure = (double)j / (double)Length;
+									time = Measure[CurrentMeasure].StartTime + placeinmeasure*Measure[CurrentMeasure].BeatCount*(60.0 / Measure[CurrentMeasure].StartBPM);
+									fprintf(OutputFilePt, "{\n\"timing_sec\":");
+									fprintf(OutputFilePt, "%.3lf", time);
+									fprintf(OutputFilePt, ",\n\"notes_attribute\":");
+									fprintf(OutputFilePt, "%d", notes_attribute);
+									fprintf(OutputFilePt, ",\n\"notes_level\":1,\n\"effect\":1,\n\"effect_value\":");
+									fprintf(OutputFilePt, "1");
+									fprintf(OutputFilePt, ",\n\"position\":");
+									int outputposition = 9 - i;
+									fprintf(OutputFilePt, "%d", outputposition);
+									fprintf(OutputFilePt, "\n},\n");
+									fflush(OutputFilePt);
+									//但凡不是00，都暂定为同一种note。
+								}
 							}
 						}
 					}
 				}
 			}
 		}
-	}
+	fprintf(OutputFilePt, "]");
 	fclose(SourceFilePt);
 	fclose(OutputFilePt);
 }
@@ -428,10 +431,10 @@ int main(int argc, char *argv[])
 	scanf("%d", &UniversalOffset);
 	InitializeMeasures();
 
-	
+
 	printf("采用PMS通道标准。");
 
 	WriteFile(argv[1]);
-	fprintf(OutputFilePt, "]");
+
 	return 0;
 }
