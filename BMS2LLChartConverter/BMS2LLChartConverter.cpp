@@ -113,7 +113,7 @@ int MainDataLine_GetLength()
 	int Length = 0, i = 7;
 	while (1)
 	{
-		if (CurrentLine[i] == 10)//10即是"\n"
+		if ((CurrentLine[i] == 10)||(CurrentLine[i] == 0))//10即是"\n"，0即是\0
 		{
 			break;
 		}
@@ -306,6 +306,36 @@ void InitializeMeasures()
 	}
 }
 
+void WriteNote(double time, int notes_attribute, int outputposition)
+{
+
+	fprintf(OutputFilePt, "{\n\"timing_sec\":");
+	fprintf(OutputFilePt, "%.3lf", time);
+	fprintf(OutputFilePt, ",\n\"notes_attribute\":");
+	fprintf(OutputFilePt, "%d", notes_attribute);
+	fprintf(OutputFilePt, ",\n\"notes_level\":1,\n\"effect\":1,\n\"effect_value\":");
+	fprintf(OutputFilePt, "1");
+	fprintf(OutputFilePt, ",\n\"position\":");
+	fprintf(OutputFilePt, "%d", outputposition);
+	fprintf(OutputFilePt, "\n},\n");
+	fflush(OutputFilePt);
+}
+void WriteLongNote(double starttime, double endtime, int notes_attribute, int outputposition)
+{
+	double duration = endtime - starttime;
+
+	fprintf(OutputFilePt, "{\n\"timing_sec\":");
+	fprintf(OutputFilePt, "%.3lf", starttime);
+	fprintf(OutputFilePt, ",\n\"notes_attribute\":");
+	fprintf(OutputFilePt, "%d", notes_attribute);
+	fprintf(OutputFilePt, ",\n\"notes_level\":1,\n\"effect\":3,\n\"effect_value\":");
+	fprintf(OutputFilePt, "%.3lf", duration);
+	fprintf(OutputFilePt, ",\n\"position\":");
+	fprintf(OutputFilePt, "%d", outputposition);
+	fprintf(OutputFilePt, "\n},\n");
+	fflush(OutputFilePt);
+}
+
 void WriteFile(char sourcefilename[])
 {
 	for (int i = 0; i < 9; i++)
@@ -323,6 +353,10 @@ void WriteFile(char sourcefilename[])
 	if (LNType == 1)//LNTYPE=1，长音位于单独的长音通道。
 		{
 			int LNflag[9];//当前lane是否有长音头
+			for (int i = 0; i < 9; i++)
+			{
+				LNflag[i] = 0;
+			}
 			double LNStartTime[9], LNEndTime[9];
 			while (!feof(SourceFilePt))
 			{
@@ -343,21 +377,46 @@ void WriteFile(char sourcefilename[])
 								{
 									placeinmeasure = (double)j / (double)Length;
 									time = Measure[CurrentMeasure].StartTime + placeinmeasure*Measure[CurrentMeasure].BeatCount*(60.0 / Measure[CurrentMeasure].StartBPM);
-									fprintf(OutputFilePt, "{\n\"timing_sec\":");
-									fprintf(OutputFilePt, "%.3lf", time);
-									fprintf(OutputFilePt, ",\n\"notes_attribute\":");
-									fprintf(OutputFilePt, "%d", notes_attribute);
-									fprintf(OutputFilePt, ",\n\"notes_level\":1,\n\"effect\":1,\n\"effect_value\":");
-									fprintf(OutputFilePt, "1");
-									fprintf(OutputFilePt, ",\n\"position\":");
 									int outputposition = 9 - i;
-									fprintf(OutputFilePt, "%d", outputposition);
-									fprintf(OutputFilePt, "\n},\n");
-									fflush(OutputFilePt);
+									WriteNote(time, notes_attribute, outputposition);
 									//但凡不是00，都暂定为同一种note。
 								}
 							}
 						}
+						//写米
+
+
+						if ((CurrentLine[4] - 4 == keychar[i][0]) && (CurrentLine[5] == keychar[i][1]))
+						{
+							int Length = MainDataLine_GetLength();
+							int CurrentMeasure;
+							double time, placeinmeasure;
+							CurrentMeasure = ReadMeasureCount();
+							for (int j = 0; j < Length; j++)
+							{
+								if (!((CurrentLine[7 + 2 * j] == '0') && (CurrentLine[7 + 2 * j + 1] == '0')))
+								{
+									placeinmeasure = (double)j / (double)Length;
+									time = Measure[CurrentMeasure].StartTime + placeinmeasure*Measure[CurrentMeasure].BeatCount*(60.0 / Measure[CurrentMeasure].StartBPM);
+									int outputposition = 9 - i;
+									if (LNflag[i] == 0)
+									{
+										LNflag[i] = 1;
+										LNStartTime[i] = time;
+									}
+									else
+									{
+										LNflag[i] = 0;
+										LNEndTime[i] = time;
+										WriteLongNote(LNStartTime[i], LNEndTime[i], notes_attribute, outputposition);
+									}
+									//但凡不是00，都暂定为同一种note。
+								}
+							}
+						}
+
+
+
 					}
 				}
 			}
