@@ -11,7 +11,9 @@
 #define CHANGEBEATCOUNTLINE 4
 
 char keychar[9][2];
-int key[9] = { 11, 12, 13, 14, 15, 22, 23, 24, 25 };
+//PMSint key[9] = { 11, 12, 13, 14, 15, 22, 23, 24, 25 };
+//7keys
+int key[9] = { 99,11,12,13,14,15,18,19,99 };
 int notes_attribute = 1;
 FILE *SourceFilePt;
 FILE *OutputFilePt;
@@ -170,8 +172,6 @@ int ReadMeasureCount()//不再考虑maxmeasure，直接使用1000
 	return Count;
 }
 
-
-
 int ProcessCurrentLineNum(int LineType)
 {
 	switch (LineType)
@@ -304,6 +304,13 @@ void InitializeMeasures()
 		}
 		
 	}
+}
+
+void SetLanes()
+{
+	printf("请选择通道标准。\n");
+	printf("0.自定义\n1.PMS标准\n2.七键无盘标准（音符居中）\n");
+
 }
 
 void WriteNote(double time, int notes_attribute, int outputposition)
