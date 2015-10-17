@@ -11,7 +11,7 @@
 #define CHANGEBEATCOUNTLINE 4
 
 char keychar[9][2];
-int key[9] = { 11, 12, 13, 14, 15, 22, 23, 24, 25 };
+int key[9];
 int notes_attribute = 1;
 FILE *SourceFilePt;
 FILE *OutputFilePt;
@@ -426,6 +426,37 @@ void WriteFile(char sourcefilename[])
 	fclose(OutputFilePt);
 }
 
+void LoadStandard()
+{
+	char input;
+	printf("请选择通道标准。\n1.PMS标准，按键居中\n2.七键+碟BMS标准\n");
+	getchar();
+	scanf("%c", &input);
+	switch (input) 
+	{
+	case '1':
+		key[0] = 11;
+		key[1] = 12;
+		key[2] = 13;
+		key[3] = 14;
+		key[4] = 15;
+		key[5] = 22;
+		key[6] = 23;
+		key[7] = 24;
+		key[8] = 25;
+	case '2':
+		key[0] = 99;
+		key[1] = 11;
+		key[2] = 12;
+		key[3] = 13;
+		key[4] = 14;
+		key[5] = 15;
+		key[6] = 18;
+		key[7] = 19;
+		key[8] = 99;
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	if (argc != 2)
@@ -489,9 +520,7 @@ int main(int argc, char *argv[])
 	printf("请输入全局 Offset ，整数，单位为毫秒。\n");
 	scanf("%d", &UniversalOffset);
 	InitializeMeasures();
-
-
-	printf("采用PMS通道标准。");
+	LoadStandard();
 
 	WriteFile(argv[1]);
 
